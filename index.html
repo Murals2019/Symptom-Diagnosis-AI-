@@ -3,51 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Diagnostic Reporter (Restored Functionality)</title>
-    <!-- Load Tailwind CSS -->
+    <title>AI Diagnostic Reporter</title>
+    <!-- Load Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- CSS STYLESHEET BLOCK (Conceptual style.css) -->
     <style>
-        /* Custom styles for Inter font and general aesthetics */
+        /* Base styles and font setup */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f7f9fb;
         }
+        /* Card styling for modern look and feel */
         .diagnosis-card {
-            box-shadow: 0 0 40px rgba(79, 70, 229, 0.1); /* Subtle Indigo shadow */
+            box-shadow: 0 0 40px rgba(79, 70, 229, 0.15); 
+            transition: transform 0.3s ease-in-out;
         }
-        .main-container {
-            border: 1px solid #e5e7eb;
+        .diagnosis-card:hover {
+             transform: translateY(-2px);
         }
         .header-bg {
+            /* Vibrant gradient header */
             background-image: linear-gradient(135deg, #4f46e5 0%, #a5b4fc 100%);
             color: white;
         }
+        /* Styling for button during processing state */
         .processing {
             cursor: not-allowed;
             background-color: #9ca3af;
             transform: scale(1);
         }
+        /* Report output container styling */
         .report-content {
             background-color: #fff;
             padding: 1.5rem;
             border-radius: 0.75rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        /* Custom scrollbar for report area */
-        .report-scroll::-webkit-scrollbar {
-            width: 8px;
-        }
-        .report-scroll::-webkit-scrollbar-thumb {
-            background-color: #c7d2fe;
-            border-radius: 10px;
-        }
     </style>
+
+    <!-- JAVASCRIPT BLOCK (Containing all functions) -->
     <script>
-        // Set the API Key (leaving it empty for the sandbox environment)
+        // --- API Configuration ---
         const apiKey = "";
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
-        // Utility function for exponential backoff retry logic
+        // --- Utility Functions ---
+
+        /**
+         * Utility function for exponential backoff retry logic for API calls.
+         * @param {string} url - The API endpoint URL.
+         * @param {Object} options - Fetch request options.
+         * @param {number} retries - Maximum number of retries.
+         * @returns {Promise<Response>} - The successful fetch response.
+         */
         async function fetchWithRetry(url, options, retries = 5) {
             for (let i = 0; i < retries; i++) {
                 try {
@@ -55,7 +64,7 @@
                     if (response.status !== 429) { // Not a Rate Limit error
                         return response;
                     }
-                    // If 429 (Too Many Requests), log and retry
+                    // If 429 (Too Many Requests), wait and retry
                     await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000 + Math.random() * 1000));
                 } catch (error) {
                     console.error("Fetch attempt failed:", error);
@@ -100,6 +109,9 @@
             `;
         }
 
+        /**
+         * Main function to handle user input, call the Gemini API, and display results.
+         */
         async function analyzeSymptoms() {
             const unifiedInput = document.getElementById('unifiedInput');
             const diagnoseButton = document.getElementById('diagnoseButton');
@@ -112,7 +124,7 @@
                 return;
             }
 
-            // Get settings for future use (currently text output ignores these, but good practice to fetch them)
+            // Get settings values (for inclusion in the prompt)
             const analysisDepth = document.getElementById('analysisDepth').value;
             const contextWeight = document.getElementById('contextWeight').value;
 
@@ -123,7 +135,7 @@
                 ---
             `;
 
-            // Disable button and show loading
+            // Disable button and show loading state
             diagnoseButton.disabled = true;
             diagnoseButton.classList.add('processing');
             diagnoseButton.textContent = 'Analyzing Data...';
@@ -135,7 +147,7 @@
             
             try {
                 // System prompt is configured for a robust Markdown text output
-                const systemPrompt = `You are a highly analytical, conservative, and safety-focused diagnostic assistant. Based on the 'UNIFIED INPUT DATA' provided, you must generate a single, comprehensive report using Markdown formatting.
+                const systemPrompt = `You are a highly analytical, conservative, and safety-focused diagnostic assistant. Based on the 'UNIFIED INPUT DATA' provided, you must intelligently separate the data and generate a single, comprehensive report using Markdown formatting.
 
                 The analysis must be rigorous, separating the data and performing a two-stage analysis (Symptomatic first, then Contextual integration). Use a high analysis depth (${analysisDepth}) and consider contextual data with moderate weight (${contextWeight}/10).
 
@@ -169,7 +181,7 @@
                 [An action-oriented, bulleted list of next steps.]
 
                 ## 6. Essential Data Needed for Confirmation
-                [A bulleted list of 3-5 concrete pieces of missing information required to achieve 90%+ confidence. If confidence is already high, state 'None, the provided data is sufficient for a confident assessment.']`;
+                [A bulleted list of 3-5 concrete pieces of missing information required to achieve 90%+ confidence. If confidence is already high (e.g., above 90%), state 'None, the provided data is sufficient for a confident assessment.']`;
 
                 const payload = {
                     contents: [{ parts: [{ text: userQuery }] }],
@@ -179,6 +191,7 @@
                     }
                 };
 
+                // Perform the API call with retry logic
                 response = await fetchWithRetry(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -192,25 +205,27 @@
                     responseText = candidate.content.parts[0].text.trim();
                     let sources = [];
                     const groundingMetadata = candidate.groundingMetadata;
+                    
+                    // Extract grounding sources if available
                     if (groundingMetadata && groundingMetadata.groundingAttributions) {
                          sources = groundingMetadata.groundingAttributions
                             .map(attribution => ({ uri: attribution.web?.uri, title: attribution.web?.title }))
                             .filter(source => source.uri && source.title)
-                            .slice(0, 5);
+                            .slice(0, 5); // Limit sources for clean display
                     }
                     
                     // Render the full analysis report (Markdown text)
                     renderAnalysisReport(responseText, sources);
 
                 } else {
-                    resultsDiv.innerHTML = '<p class="text-red-600 text-center p-4 bg-red-50 rounded-lg">The AI failed to generate a diagnosis. Please try again with a more detailed description or check the console for API errors.</p>';
+                    resultsDiv.innerHTML = '<p class="text-red-600 text-center p-4 bg-red-50 rounded-lg">The AI failed to generate a diagnosis. The response was empty. Please check the console for API errors.</p>';
                 }
 
             } catch (error) {
                 console.error('API Error:', error);
                 resultsDiv.innerHTML = `<p class="text-red-600 text-center p-4 bg-red-50 rounded-lg">An error occurred while communicating with the AI: ${error.message}</p>`;
             } finally {
-                // Re-enable button and hide loading
+                // Re-enable button and hide loading state
                 diagnoseButton.disabled = false;
                 diagnoseButton.classList.remove('processing');
                 diagnoseButton.textContent = 'Generate Detailed Report';
@@ -228,7 +243,7 @@
 
     <div class="max-w-5xl mx-auto">
         
-        <!-- Header -->
+        <!-- Header Section -->
         <header class="header-bg p-6 rounded-t-xl mb-8 diagnosis-card">
             <h1 class="text-4xl font-extrabold text-center mb-1">
                 AI Diagnostic Intelligence
@@ -243,19 +258,19 @@
                 
                 <!-- Product Overview Card -->
                 <div class="bg-white p-6 rounded-xl diagnosis-card">
-                    <h2 class="text-xl font-bold text-gray-800 mb-3 border-b pb-2">Product Overview</h2>
+                    <h2 class="text-xl font-bold text-gray-800 mb-3 border-b pb-2 text-indigo-700">Product Overview</h2>
                     <p class="text-gray-600 text-sm leading-relaxed">
                         This tool performs a highly structured, two-stage analysis on any provided data (medical charts, IT logs, engineering issues). It intelligently separates **Symptomatic/Objective** data from **Environmental/Contextual** data. It then ranks potential diagnoses, provides a confidence score, and suggests necessary next steps or missing data points.
                     </p>
-                    <div class="mt-4 text-xs text-indigo-600 font-semibold flex items-center">
-                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-                        Focuses on safety and data sufficiency.
+                    <div class="mt-4 text-xs text-indigo-600 font-semibold flex items-center p-2 bg-indigo-50 rounded-lg">
+                        <svg class="w-4 h-4 mr-1 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                        Focuses on providing deep, critical analysis and high data sufficiency checks.
                     </div>
                 </div>
 
-                <!-- Settings Card (Sliders are currently decorative but represent influence on the analysis prompt) -->
+                <!-- Settings Card (Sliders are currently decorative) -->
                 <div class="bg-white p-6 rounded-xl diagnosis-card">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Analysis Settings</h2>
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2 text-indigo-700">Analysis Settings</h2>
                     
                     <div class="mb-5">
                         <label for="analysisDepth" class="block text-sm font-medium text-gray-700 mb-1">Analysis Depth (Rigor)</label>
@@ -275,7 +290,7 @@
                         </div>
                     </div>
 
-                    <p class="mt-4 text-xs italic text-gray-500">Settings are currently hardcoded in the AI prompt for stable output but show intended control.</p>
+                    <p class="mt-4 text-xs italic text-gray-500">Note: These sliders show the intended control; values are hardcoded in the AI prompt for stable, complex output.</p>
                 </div>
             </div>
 
@@ -284,9 +299,9 @@
                 
                 <!-- Input Area -->
                 <div class="bg-white p-6 rounded-xl diagnosis-card">
-                    <label for="unifiedInput" class="block text-xl font-semibold text-gray-700 mb-3">2. Unified Input Area</label>
+                    <label for="unifiedInput" class="block text-xl font-semibold text-gray-700 mb-3 text-indigo-700">2. Unified Input Area</label>
                     <textarea id="unifiedInput" rows="10" 
-                            placeholder="Enter the complete dataset: system logs, full medical chart (like SOAP), or detailed observations. The AI will separate symptoms from context internally."
+                            placeholder="Enter the complete dataset: full medical chart (like SOAP), system logs, or detailed observations. The AI will separate symptoms from context internally."
                             class="w-full p-4 border border-indigo-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out resize-none text-gray-800 focus:shadow-indigo-300 focus:shadow-md"></textarea>
                     
                     <div class="mt-6 flex flex-col items-center">
