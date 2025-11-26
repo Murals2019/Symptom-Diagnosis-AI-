@@ -1,3 +1,5 @@
+<!-- Full HTML file updated to use ChatGPT API instead of Anthropic -->
+<!-- NOTE: Replace YOUR_CHATGPT_MODEL with desired model, e.g., "gpt-4.1" -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,393 +8,138 @@
     <title>AI Diagnostic Intelligence</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        }
-        .diagnosis-card {
-            box-shadow: 0 0 40px rgba(79, 70, 229, 0.15);
-            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-        }
-        .diagnosis-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 50px rgba(79, 70, 229, 0.25);
-        }
-        .processing {
-            cursor: not-allowed;
-            opacity: 0.6;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .animate-spin {
-            animation: spin 1s linear infinite;
-        }
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #4f46e5;
-            cursor: pointer;
-            border-radius: 50%;
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #4f46e5;
-            cursor: pointer;
-            border-radius: 50%;
-            border: none;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        .diagnosis-card { box-shadow: 0 0 40px rgba(79,70,229,0.15); transition: .3s; }
+        .diagnosis-card:hover { transform: translateY(-2px); box-shadow: 0 0 50px rgba(79,70,229,0.25); }
+        .processing { cursor: not-allowed; opacity: .6; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+        input[type="range"]::-webkit-slider-thumb { width:20px;height:20px;background:#4f46e5;border-radius:50%;cursor:pointer; }
+        input[type="range"]::-moz-range-thumb { width:20px;height:20px;background:#4f46e5;border:none;border-radius:50%;cursor:pointer; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
-        <!-- Header -->
         <header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl shadow-2xl p-8 mb-8">
             <div class="flex items-center justify-center mb-2">
-                <svg class="w-12 h-12 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
+                <svg class="w-12 h-12 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 <h1 class="text-4xl font-extrabold">AI Diagnostic Intelligence</h1>
             </div>
-            <p class="text-center text-indigo-100 text-lg">Advanced System & Medical Data Analysis Tool</p>
+            <p class="text-center text-indigo-100 text-lg">Advanced System & Medical Data Analysis Tool (ChatGPT Edition)</p>
         </header>
 
-        <!-- API Key Notice -->
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg">
-            <div class="flex">
-                <svg class="h-5 w-5 text-yellow-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                </svg>
-                <div>
-                    <h3 class="text-sm font-medium text-yellow-800">API Key Required</h3>
-                    <p class="mt-1 text-sm text-yellow-700">You need an Anthropic API key to use this tool. Get one at <a href="https://console.anthropic.com/" target="_blank" class="underline font-semibold">console.anthropic.com</a></p>
-                </div>
-            </div>
-        </div>
-
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Column: Overview & Settings -->
             <div class="space-y-6">
-                <!-- API Key Input -->
                 <div class="bg-white rounded-xl shadow-lg p-6 diagnosis-card">
-                    <h2 class="text-xl font-bold text-indigo-700 mb-3 border-b-2 border-indigo-100 pb-2">
-                        API Configuration
-                    </h2>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Anthropic API Key
-                    </label>
-                    <input
-                        type="password"
-                        id="apiKey"
-                        placeholder="sk-ant-..."
-                        class="w-full p-3 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 text-sm"
-                    />
-                    <p class="mt-2 text-xs text-gray-500">Your API key is stored only in your browser session and never sent anywhere except Anthropic's API.</p>
+                    <h2 class="text-xl font-bold text-indigo-700 mb-3">API Configuration</h2>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">ChatGPT API Key</label>
+                    <input id="apiKey" type="password" placeholder="sk-..." class="w-full p-3 border-2 border-indigo-200 rounded-lg text-sm" />
+                    <p class="mt-2 text-xs text-gray-500">Stored only in browser memory.</p>
                 </div>
 
-                <!-- Overview Card -->
                 <div class="bg-white rounded-xl shadow-lg p-6 diagnosis-card">
-                    <h2 class="text-xl font-bold text-indigo-700 mb-3 border-b-2 border-indigo-100 pb-2">
-                        Product Overview
-                    </h2>
-                    <p class="text-gray-600 text-sm leading-relaxed mb-4">
-                        This tool performs a highly structured, two-stage analysis on any provided data (medical charts, IT logs, engineering issues). It intelligently separates <strong>Symptomatic/Objective</strong> data from <strong>Environmental/Contextual</strong> data.
-                    </p>
-                    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-3 rounded">
-                        <div class="flex items-start">
-                            <svg class="w-5 h-5 text-indigo-600 mr-2 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                            </svg>
-                            <p class="text-xs text-indigo-800 font-medium">
-                                Focuses on providing deep, critical analysis with high data sufficiency checks.
-                            </p>
-                        </div>
-                    </div>
+                    <h2 class="text-xl font-bold text-indigo-700 mb-3">Product Overview</h2>
+                    <p class="text-gray-600 text-sm mb-4">This tool separates symptomatic data from contextual data, performs 2‑stage analysis, ranks diagnoses, and detects missing data.</p>
                 </div>
 
-                <!-- Settings Card -->
                 <div class="bg-white rounded-xl shadow-lg p-6 diagnosis-card">
-                    <h2 class="text-xl font-bold text-indigo-700 mb-4 border-b-2 border-indigo-100 pb-2">
-                        Analysis Settings
-                    </h2>
-                    
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Analysis Depth: <span id="depthValue">8</span>/10
-                        </label>
-                        <input
-                            type="range"
-                            id="analysisDepth"
-                            min="1"
-                            max="10"
-                            value="8"
-                            class="w-full h-2 bg-indigo-100 rounded-lg cursor-pointer"
-                            oninput="document.getElementById('depthValue').textContent = this.value"
-                        />
-                        <div class="flex justify-between text-xs text-gray-500 mt-1">
-                            <span>Shallow</span>
-                            <span>Deep</span>
-                        </div>
-                    </div>
+                    <h2 class="text-xl font-bold text-indigo-700 mb-4">Analysis Settings</h2>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Analysis Depth: <span id="depthValue">8</span>/10</label>
+                    <input id="analysisDepth" type="range" min="1" max="10" value="8" class="w-full h-2 bg-indigo-100 rounded-lg" oninput="depthValue.textContent=this.value" />
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Context Weight: <span id="contextValue">6</span>/10
-                        </label>
-                        <input
-                            type="range"
-                            id="contextWeight"
-                            min="1"
-                            max="10"
-                            value="6"
-                            class="w-full h-2 bg-indigo-100 rounded-lg cursor-pointer"
-                            oninput="document.getElementById('contextValue').textContent = this.value"
-                        />
-                        <div class="flex justify-between text-xs text-gray-500 mt-1">
-                            <span>Low</span>
-                            <span>High</span>
-                        </div>
-                    </div>
+                    <label class="block text-sm font-medium text-gray-700 mt-4 mb-2">Context Weight: <span id="contextValue">6</span>/10</label>
+                    <input id="contextWeight" type="range" min="1" max="10" value="6" class="w-full h-2 bg-indigo-100 rounded-lg" oninput="contextValue.textContent=this.value" />
                 </div>
             </div>
 
-            <!-- Right Column: Input & Output -->
             <div class="lg:col-span-2 space-y-6">
-                <!-- Input Area -->
                 <div class="bg-white rounded-xl shadow-lg p-6 diagnosis-card">
-                    <label class="block text-xl font-semibold text-indigo-700 mb-3">
-                        Data Input Area
-                    </label>
-                    <textarea
-                        id="inputData"
-                        rows="10"
-                        placeholder="Enter complete dataset: medical chart (SOAP notes), system logs, detailed observations, or any diagnostic data. The AI will separate symptoms from context internally."
-                        class="w-full p-4 border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 resize-none text-gray-800"
-                    ></textarea>
+                    <label class="block text-xl font-semibold text-indigo-700 mb-3">Data Input Area</label>
+                    <textarea id="inputData" rows="10" class="w-full p-4 border-2 border-indigo-200 rounded-lg text-gray-800 resize-none" placeholder="Enter dataset here..."></textarea>
                     
                     <div class="mt-6 flex flex-col items-center">
-                        <button
-                            id="analyzeButton"
-                            onclick="analyzeData()"
-                            class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-full shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 transition duration-300 transform hover:scale-105 active:scale-95"
-                        >
-                            Generate Detailed Report
-                        </button>
-                        <div id="loadingIndicator" class="hidden mt-4 flex items-center space-x-2 text-indigo-600 font-medium">
-                            <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>Processing & Analyzing Data...</span>
+                        <button id="analyzeButton" onclick="analyzeData()" class="px-8 py-3 bg-indigo-600 text-white font-bold rounded-full shadow-lg hover:bg-indigo-700 transition">Generate Detailed Report</button>
+                        <div id="loadingIndicator" class="hidden mt-4 flex items-center text-indigo-600 font-medium">
+                            <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                            Processing...
                         </div>
                     </div>
                 </div>
 
-                <!-- Error Display -->
                 <div id="errorDisplay" class="hidden bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                        </svg>
-                        <p id="errorMessage" class="text-red-700 font-medium"></p>
-                    </div>
+                    <p id="errorMessage" class="text-red-700 font-medium"></p>
                 </div>
 
-                <!-- Results Display -->
-                <div id="resultsContainer">
-                    <div class="bg-white rounded-xl shadow-lg p-12 text-center border-2 border-dashed border-indigo-200">
-                        <svg class="w-16 h-16 text-indigo-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <p class="text-lg font-medium text-gray-600 mb-2">Report Ready</p>
-                        <p class="text-sm text-gray-500">Your comprehensive analysis will appear here after processing.</p>
-                    </div>
+                <div id="resultsContainer" class="bg-white rounded-xl shadow-lg p-12 text-center border-2 border-dashed border-indigo-200">
+                    <p class="text-lg font-medium text-gray-600">Your report will appear here.</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // Store API key in memory only (session-based)
-        let userApiKey = '';
+<script>
+async function analyzeData() {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const inputData = document.getElementById('inputData').value.trim();
+    const depth = document.getElementById('analysisDepth').value;
+    const weight = document.getElementById('contextWeight').value;
+    const errorDisplay = document.getElementById('errorDisplay');
+    const errorMessage = document.getElementById('errorMessage');
 
-        async function analyzeData() {
-            const apiKeyInput = document.getElementById('apiKey').value.trim();
-            const inputData = document.getElementById('inputData').value.trim();
-            const analysisDepth = document.getElementById('analysisDepth').value;
-            const contextWeight = document.getElementById('contextWeight').value;
-            const analyzeButton = document.getElementById('analyzeButton');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const errorDisplay = document.getElementById('errorDisplay');
-            const errorMessage = document.getElementById('errorMessage');
-            const resultsContainer = document.getElementById('resultsContainer');
+    if (!apiKey) { errorMessage.textContent = "Please enter your ChatGPT API key."; errorDisplay.classList.remove('hidden'); return; }
+    if (!inputData) { errorMessage.textContent = "Please enter data to analyze."; errorDisplay.classList.remove('hidden'); return; }
 
-            // Validate API key
-            if (!apiKeyInput) {
-                errorMessage.textContent = 'Please enter your Anthropic API key';
-                errorDisplay.classList.remove('hidden');
-                return;
-            }
+    errorDisplay.classList.add('hidden');
+    analyzeButton.disabled = true;
+    loadingIndicator.classList.remove('hidden');
 
-            // Validate input
-            if (!inputData) {
-                errorMessage.textContent = 'Please enter data to analyze';
-                errorDisplay.classList.remove('hidden');
-                return;
-            }
+    const systemPrompt = `You are an advanced diagnostic AI using structured two-stage analysis.
+1. Separate symptomatic/objective data.
+2. Separate contextual/environmental data.
+3. Stage 1: hypotheses from symptoms only.
+4. Stage 2: refine using context.
+5. Give confidence score.
+6. Rank differential diagnoses.
+7. Give recommendations.
+8. Identify missing critical data.
+Analysis Depth: ${depth}/10
+Context Weight: ${weight}/10`;
 
-            // Store API key
-            userApiKey = apiKeyInput;
+    try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4.1",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: inputData }
+                ],
+                max_tokens: 4000
+            })
+        });
 
-            // Hide error, show loading
-            errorDisplay.classList.add('hidden');
-            analyzeButton.disabled = true;
-            analyzeButton.classList.add('processing');
-            analyzeButton.innerHTML = '<span class="flex items-center justify-center"><svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Analyzing...</span>';
-            loadingIndicator.classList.remove('hidden');
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error?.message || "API error");
 
-            const systemPrompt = `You are an advanced diagnostic AI assistant specializing in structured data analysis. Your task is to analyze the provided data using a rigorous two-stage methodology.
+        displayResults(data.choices[0].message.content, inputData.length, depth, weight);
 
-ANALYSIS FRAMEWORK:
+    } catch (err) {
+        errorMessage.textContent = err.message;
+        errorDisplay.classList.remove('hidden');
+    } finally {
+        analyzeButton.disabled = false;
+        loadingIndicator.classList.add('hidden');
+    }
+}
 
-1. DATA SEPARATION & CATEGORIZATION
-   - Separate SYMPTOMATIC/OBJECTIVE data (measurements, observations, lab results, error codes, metrics)
-   - Separate ENVIRONMENTAL/CONTEXTUAL data (history, lifestyle, system configuration, background factors)
+function displayResults(text, size, depth, weight) {
+    document.getElementById('resultsContainer').innerHTML = `<div class='text-left'>${text.replace(/\n/g, '<br>')}</div>`;
+}
+</script>
 
-2. TWO-STAGE ANALYSIS
-   Stage 1: Generate initial hypotheses based ONLY on symptomatic/objective data
-   Stage 2: Refine hypotheses by incorporating contextual/environmental factors
-
-3. CONFIDENCE ASSESSMENT
-   - Provide a confidence score (0-100%)
-   - Explain the reasoning behind your confidence level
-   - Note any data quality issues or gaps
-
-4. RANKED DIFFERENTIAL DIAGNOSES
-   - List potential diagnoses/root causes in order of likelihood
-   - For each, provide: likelihood rating, supporting evidence, contradicting evidence
-
-5. RECOMMENDATIONS
-   - Suggested next steps or actions
-   - Priority level for each recommendation
-
-6. MISSING DATA IDENTIFICATION
-   - List critical data points needed for higher confidence
-   - Explain why each is important
-
-PARAMETERS:
-- Analysis Depth: ${analysisDepth}/10 (higher = more rigorous examination)
-- Context Weight: ${contextWeight}/10 (higher = more weight on environmental factors)
-
-OUTPUT FORMAT:
-Provide your analysis in a clear, structured format using markdown with the following sections:
-# Diagnostic Analysis Report
-## 1. Data Categorization
-## 2. Two-Stage Analysis
-## 3. Confidence Assessment
-## 4. Differential Diagnoses (Ranked)
-## 5. Recommendations
-## 6. Critical Missing Data
-
-Be thorough, analytical, and prioritize accuracy over speed.`;
-
-            try {
-                const response = await fetch('https://api.anthropic.com/v1/messages', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': userApiKey,
-                        'anthropic-version': '2023-06-01'
-                    },
-                    body: JSON.stringify({
-                        model: 'claude-sonnet-4-20250514',
-                        max_tokens: 4000,
-                        messages: [
-                            {
-                                role: 'user',
-                                content: `${systemPrompt}\n\nDATA TO ANALYZE:\n---\n${inputData}\n---`
-                            }
-                        ]
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error?.message || `API request failed with status ${response.status}`);
-                }
-
-                const data = await response.json();
-                const analysisText = data.content
-                    .filter(block => block.type === 'text')
-                    .map(block => block.text)
-                    .join('\n');
-
-                displayResults(analysisText, inputData.length, analysisDepth, contextWeight);
-            } catch (error) {
-                console.error('Analysis error:', error);
-                errorMessage.textContent = error.message || 'An error occurred during analysis';
-                errorDisplay.classList.remove('hidden');
-            } finally {
-                // Reset button
-                analyzeButton.disabled = false;
-                analyzeButton.classList.remove('processing');
-                analyzeButton.textContent = 'Generate Detailed Report';
-                loadingIndicator.classList.add('hidden');
-            }
-        }
-
-        function displayResults(analysisText, inputLength, depth, weight) {
-            const resultsContainer = document.getElementById('resultsContainer');
-            const timestamp = new Date().toLocaleString();
-            
-            // Simple markdown to HTML conversion
-            let htmlContent = analysisText
-                .replace(/^# (.+)$/gm, '<h1 class="text-3xl font-bold text-indigo-700 mt-6 mb-3 border-b-2 border-indigo-200 pb-2">$1</h1>')
-                .replace(/^## (.+)$/gm, '<h2 class="text-2xl font-bold text-indigo-600 mt-5 mb-2">$1</h2>')
-                .replace(/^### (.+)$/gm, '<h3 class="text-xl font-semibold text-gray-800 mt-4 mb-2">$1</h3>')
-                .replace(/^\- (.+)$/gm, '<li class="ml-6 text-gray-700 mb-1">$1</li>')
-                .replace(/^\* (.+)$/gm, '<li class="ml-6 text-gray-700 mb-1">$1</li>')
-                .replace(/^\d+\. (.+)$/gm, '<li class="ml-6 text-gray-700 mb-1 list-decimal">$1</li>')
-                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n\n/g, '</p><p class="text-gray-700 mb-2 leading-relaxed">')
-                .replace(/\n/g, '<br>');
-
-            resultsContainer.innerHTML = `
-                <div class="bg-white rounded-xl shadow-lg p-8">
-                    <div class="flex items-center justify-between mb-6 pb-4 border-b-2 border-indigo-100">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                            </svg>
-                            <h2 class="text-2xl font-bold text-indigo-700">Analysis Complete</h2>
-                        </div>
-                        <span class="text-sm text-gray-500">${timestamp}</span>
-                    </div>
-
-                    <div class="prose max-w-none">
-                        <p class="text-gray-700 mb-2 leading-relaxed">${htmlContent}</p>
-                    </div>
-
-                    <div class="mt-8 pt-6 border-t-2 border-gray-200">
-                        <p class="text-sm text-gray-600 mb-2">
-                            <strong>Analysis Parameters:</strong> Depth ${depth}/10, Context Weight ${weight}/10
-                        </p>
-                        <p class="text-sm text-gray-600">
-                            <strong>Input Size:</strong> ${inputLength} characters
-                        </p>
-                        <p class="mt-4 text-sm italic text-red-600 font-medium bg-red-50 p-3 rounded-lg border-l-4 border-red-500">
-                            ⚠️ Disclaimer: This report is generated by an AI model for analytical purposes only. It is NOT a substitute for professional judgment, medical diagnosis, or expert consultation.
-                        </p>
-                    </div>
-                </div>
-            `;
-        }
-    </script>
 </body>
 </html>
