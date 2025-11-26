@@ -1,5 +1,3 @@
-<!-- Full HTML file updated to use ChatGPT API instead of Anthropic -->
-<!-- NOTE: Replace YOUR_CHATGPT_MODEL with desired model, e.g., "gpt-4.1" -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -21,25 +19,27 @@
 <body class="bg-gradient-to-br from-indigo-50 via-white to-purple-50 min-h-screen p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
         <header class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl shadow-2xl p-8 mb-8">
+            <!-- Icon remains the same for consistency -->
             <div class="flex items-center justify-center mb-2">
                 <svg class="w-12 h-12 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 <h1 class="text-4xl font-extrabold">AI Diagnostic Intelligence</h1>
             </div>
-            <p class="text-center text-indigo-100 text-lg">Advanced System & Medical Data Analysis Tool (ChatGPT Edition)</p>
+            <p class="text-center text-indigo-100 text-lg">Advanced System & Medical Data Analysis Tool (Gemini Edition)</p>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="space-y-6">
                 <div class="bg-white rounded-xl shadow-lg p-6 diagnosis-card">
                     <h2 class="text-xl font-bold text-indigo-700 mb-3">API Configuration</h2>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">ChatGPT API Key</label>
-                    <input id="apiKey" type="password" placeholder="sk-..." class="w-full p-3 border-2 border-indigo-200 rounded-lg text-sm" />
+                    <!-- Key input updated for Gemini -->
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Gemini API Key</label>
+                    <input id="apiKey" type="password" placeholder="AIza..." class="w-full p-3 border-2 border-indigo-200 rounded-lg text-sm" />
                     <p class="mt-2 text-xs text-gray-500">Stored only in browser memory.</p>
                 </div>
 
                 <div class="bg-white rounded-xl shadow-lg p-6 diagnosis-card">
                     <h2 class="text-xl font-bold text-indigo-700 mb-3">Product Overview</h2>
-                    <p class="text-gray-600 text-sm mb-4">This tool separates symptomatic data from contextual data, performs 2‑stage analysis, ranks diagnoses, and detects missing data.</p>
+                    <p class="text-gray-600 text-sm mb-4">This tool separates symptomatic data from contextual data, performs 2‑stage analysis, ranks diagnoses, and detects missing data using the Gemini model.</p>
                 </div>
 
                 <div class="bg-white rounded-xl shadow-lg p-6 diagnosis-card">
@@ -78,67 +78,131 @@
     </div>
 
 <script>
-async function analyzeData() {
-    const apiKey = document.getElementById('apiKey').value.trim();
-    const inputData = document.getElementById('inputData').value.trim();
-    const depth = document.getElementById('analysisDepth').value;
-    const weight = document.getElementById('contextWeight').value;
-    const errorDisplay = document.getElementById('errorDisplay');
-    const errorMessage = document.getElementById('errorMessage');
+    const MODEL_NAME = "gemini-2.5-flash-preview-09-2025";
+    const MAX_RETRIES = 5;
+    const INITIAL_DELAY_MS = 1000;
 
-    if (!apiKey) { errorMessage.textContent = "Please enter your ChatGPT API key."; errorDisplay.classList.remove('hidden'); return; }
-    if (!inputData) { errorMessage.textContent = "Please enter data to analyze."; errorDisplay.classList.remove('hidden'); return; }
+    /**
+     * Executes a fetch request with exponential backoff for robustness.
+     * @param {string} url - The API URL including the API key.
+     * @param {object} options - The fetch request options (method, headers, body).
+     * @returns {Promise<object>} The JSON response data.
+     */
+    async function fetchWithRetry(url, options) {
+        let lastError = null;
+        for (let i = 0; i < MAX_RETRIES; i++) {
+            try {
+                const response = await fetch(url, options);
+                const data = await response.json();
 
-    errorDisplay.classList.add('hidden');
-    analyzeButton.disabled = true;
-    loadingIndicator.classList.remove('hidden');
+                if (response.ok) {
+                    return data; // Success
+                }
 
-    const systemPrompt = `You are an advanced diagnostic AI using structured two-stage analysis.
+                // If not OK, check if it's a rate limit error (429) or temporary server error (5xx)
+                if (response.status === 429 || (response.status >= 500 && response.status < 600)) {
+                    lastError = data.error?.message || `API error with status ${response.status}`;
+                    const delay = INITIAL_DELAY_MS * Math.pow(2, i);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    // Continue to next retry
+                } else {
+                    // Non-retryable error (e.g., 400 Bad Request, 401 Unauthorized)
+                    throw new Error(data.error?.message || `API error: ${response.status} ${response.statusText}`);
+                }
+            } catch (err) {
+                // Network error or other non-API error
+                lastError = err.message;
+                const delay = INITIAL_DELAY_MS * Math.pow(2, i);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+        throw new Error(`Failed after ${MAX_RETRIES} attempts. Last error: ${lastError}`);
+    }
+
+    async function analyzeData() {
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const inputData = document.getElementById('inputData').value.trim();
+        const depth = document.getElementById('analysisDepth').value;
+        const weight = document.getElementById('contextWeight').value;
+        const analyzeButton = document.getElementById('analyzeButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorDisplay = document.getElementById('errorDisplay');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        if (!apiKey) { errorMessage.textContent = "Please enter your Gemini API key."; errorDisplay.classList.remove('hidden'); return; }
+        if (!inputData) { errorMessage.textContent = "Please enter data to analyze."; errorDisplay.classList.remove('hidden'); return; }
+
+        errorDisplay.classList.add('hidden');
+        analyzeButton.disabled = true;
+        analyzeButton.classList.add('processing');
+        loadingIndicator.classList.remove('hidden');
+        resultsContainer.innerHTML = `<div class="text-lg font-medium text-gray-600">Generating report...</div>`;
+
+        const systemPrompt = `You are an advanced diagnostic AI using structured two-stage analysis. Your output MUST be comprehensive and clearly structured using Markdown headings.
 1. Separate symptomatic/objective data.
 2. Separate contextual/environmental data.
-3. Stage 1: hypotheses from symptoms only.
-4. Stage 2: refine using context.
-5. Give confidence score.
-6. Rank differential diagnoses.
-7. Give recommendations.
-8. Identify missing critical data.
-Analysis Depth: ${depth}/10
-Context Weight: ${weight}/10`;
+3. Stage 1: Develop initial hypotheses from symptoms only.
+4. Stage 2: Refine hypotheses using contextual data.
+5. Provide a confidence score for the primary diagnosis (0-100%).
+6. Rank three differential diagnoses.
+7. Give immediate recommendations and next steps.
+8. Identify missing critical data points.
 
-    try {
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`
+Analysis Depth setting is ${depth}/10, indicating the level of detail required in the analysis.
+Context Weight setting is ${weight}/10, indicating how much weight should be placed on contextual factors during refinement.`;
+
+        const userQuery = inputData;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${apiKey}`;
+
+        const payload = {
+            contents: [{ parts: [{ text: userQuery }] }],
+            systemInstruction: {
+                parts: [{ text: systemPrompt }]
             },
-            body: JSON.stringify({
-                model: "gpt-4.1",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: inputData }
-                ],
-                max_tokens: 4000
-            })
-        });
+        };
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error?.message || "API error");
+        try {
+            const data = await fetchWithRetry(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
 
-        displayResults(data.choices[0].message.content, inputData.length, depth, weight);
+            // Parse Gemini response
+            const candidate = data.candidates?.[0];
+            const text = candidate?.content?.parts?.[0]?.text;
 
-    } catch (err) {
-        errorMessage.textContent = err.message;
-        errorDisplay.classList.remove('hidden');
-    } finally {
-        analyzeButton.disabled = false;
-        loadingIndicator.classList.add('hidden');
+            if (!text) {
+                throw new Error("Received an empty response from the AI model.");
+            }
+            
+            // Note: Google Search Grounding is not used here as the prompt is purely diagnostic/analytical.
+
+            displayResults(text);
+
+        } catch (err) {
+            errorMessage.textContent = `Analysis Error: ${err.message}`;
+            errorDisplay.classList.remove('hidden');
+            resultsContainer.innerHTML = `<p class="text-lg font-medium text-red-600">Error generating report. Please check your API key and input data.</p>`;
+        } finally {
+            analyzeButton.disabled = false;
+            analyzeButton.classList.remove('processing');
+            loadingIndicator.classList.add('hidden');
+        }
     }
-}
 
-function displayResults(text, size, depth, weight) {
-    document.getElementById('resultsContainer').innerHTML = `<div class='text-left'>${text.replace(/\n/g, '<br>')}</div>`;
-}
+    function displayResults(text) {
+        // Simple Markdown to HTML conversion for basic formatting
+        let htmlText = text
+            .replace(/## (.*)/g, '<!-- H2 -->\n<h2 class="text-2xl font-semibold text-indigo-700 mt-6 mb-3">$1</h2>')
+            .replace(/# (.*)/g, '<!-- H1 -->\n<h1 class="text-3xl font-bold text-indigo-800 border-b pb-2 mb-4">$1</h1>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+            
+        // Final cleaning and rendering
+        document.getElementById('resultsContainer').innerHTML = `<div class='text-left leading-relaxed p-4'>${htmlText}</div>`;
+    }
 </script>
 
 </body>
